@@ -15,14 +15,11 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
-// TestVictoriaMetricsSingleInstallDefault tests that the victoria-metrics-single chart can be installed with default values.
-func TestVictoriaMetricsSingleInstallDefault(t *testing.T) {
-	t.Parallel()
+// TestVictoriaTracesSingleInstallDefault tests that the victoria-traces-single chart can be installed with default values.
+func TestVictoriaTracesSingleInstallDefault(t *testing.T) {
+	const helmChartPath = "../charts/victoria-traces-single"
 
-	const helmChartPath = "../charts/victoria-metrics-single"
-
-	namespaceName := fmt.Sprintf("vmsingle-%s", strings.ToLower(random.UniqueId()))
-
+	namespaceName := fmt.Sprintf("vtracesingle-%s", strings.ToLower(random.UniqueId()))
 	kubectlOptions := k8s.NewKubectlOptions("", "", namespaceName)
 	k8s.CreateNamespace(t, kubectlOptions, namespaceName)
 	defer k8s.DeleteNamespace(t, kubectlOptions, namespaceName)
@@ -32,18 +29,18 @@ func TestVictoriaMetricsSingleInstallDefault(t *testing.T) {
 		KubectlOptions:    kubectlOptions,
 	}
 
-	releaseName := fmt.Sprintf("vmsingle-%s", strings.ToLower(random.UniqueId()))
+	// Install the chart and verify no errors occurred.
+	releaseName := fmt.Sprintf("vtsingle-%s", strings.ToLower(random.UniqueId()))
 	defer helm.Delete(t, options, releaseName, true)
 	helm.Install(t, options, helmChartPath, releaseName)
 
 	k8sClient, err := k8s.GetKubernetesClientFromOptionsE(t, kubectlOptions)
 	require.NoError(t, err)
-
 	// Verify the StatefulSet was created and is ready using manual polling
-	statefulSetName := fmt.Sprintf("%s-victoria-metrics-single-server", releaseName)
+	singleName := fmt.Sprintf("%s-vt-single-server", releaseName)
 	var statefulSet *appsv1.StatefulSet
 	err = wait.PollUntilContextTimeout(context.Background(), pollingInterval, pollingTimeout, true, func(ctx context.Context) (done bool, err error) {
-		statefulSet, err = k8sClient.AppsV1().StatefulSets(namespaceName).Get(ctx, statefulSetName, metav1.GetOptions{})
+		statefulSet, err = k8sClient.AppsV1().StatefulSets(namespaceName).Get(ctx, singleName, metav1.GetOptions{})
 		if err != nil {
 			return false, nil
 		}
@@ -52,8 +49,5 @@ func TestVictoriaMetricsSingleInstallDefault(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.NotNil(t, statefulSet)
-
-	// Verify the Service was created and is available
-	serviceName := fmt.Sprintf("%s-victoria-metrics-single-server", releaseName)
-	k8s.WaitUntilServiceAvailable(t, kubectlOptions, serviceName, retries, pollingInterval)
+	k8s.WaitUntilServiceAvailable(t, kubectlOptions, singleName, retries, pollingInterval)
 }

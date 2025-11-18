@@ -10,13 +10,13 @@ import (
 	"github.com/gruntwork-io/terratest/modules/random"
 )
 
-// TestVictoriaMetricsAgentInstallDefault tests that the victoria-metrics-agent chart can be installed with default values.
-func TestVictoriaMetricsAgentInstallDefault(t *testing.T) {
+// TestVictoriaMetricsOperatorInstallDefault tests that the victoria-metrics-operator chart can be installed with default values.
+func TestVictoriaMetricsOperatorInstallDefault(t *testing.T) {
 	t.Parallel()
 
-	const helmChartPath = "../charts/victoria-metrics-agent"
+	const helmChartPath = "../charts/victoria-metrics-operator"
 
-	namespaceName := fmt.Sprintf("vmagent-%s", strings.ToLower(random.UniqueId()))
+	namespaceName := fmt.Sprintf("vmoperator-%s", strings.ToLower(random.UniqueId()))
 	kubectlOptions := k8s.NewKubectlOptions("", "", namespaceName)
 	k8s.CreateNamespace(t, kubectlOptions, namespaceName)
 	defer k8s.DeleteNamespace(t, kubectlOptions, namespaceName)
@@ -24,16 +24,14 @@ func TestVictoriaMetricsAgentInstallDefault(t *testing.T) {
 	options := &helm.Options{
 		BuildDependencies: true,
 		KubectlOptions:    kubectlOptions,
-		SetValues: map[string]string{
-			"remoteWrite[0].url": "http://example.com:9428",
-		},
 	}
 
 	// Install the chart and verify no errors occurred.
-	releaseName := fmt.Sprintf("vmagent-%s", strings.ToLower(random.UniqueId()))
+	releaseName := fmt.Sprintf("vmoperator-%s", strings.ToLower(random.UniqueId()))
 	defer helm.Delete(t, options, releaseName, true)
 	helm.Install(t, options, helmChartPath, releaseName)
 
-	vmAgent := fmt.Sprintf("%s-victoria-metrics-agent", releaseName)
-	k8s.WaitUntilDeploymentAvailable(t, kubectlOptions, vmAgent, retries, pollingInterval)
+	// Verify the Deployment was created and is ready
+	deploymentName := fmt.Sprintf("%s-victoria-metrics-operator", releaseName)
+	k8s.WaitUntilDeploymentAvailable(t, kubectlOptions, deploymentName, retries, pollingInterval)
 }

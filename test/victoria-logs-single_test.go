@@ -15,13 +15,11 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
-// TestVictoriaMetricsSingleInstallDefault tests that the victoria-metrics-single chart can be installed with default values.
-func TestVictoriaMetricsSingleInstallDefault(t *testing.T) {
-	t.Parallel()
+// TestVictoriaLogsSingleInstallDefault tests that the victoria-logs-single chart can be installed with default values.
+func TestVictoriaLogsSingleInstallDefault(t *testing.T) {
+	const helmChartPath = "../charts/victoria-logs-single"
 
-	const helmChartPath = "../charts/victoria-metrics-single"
-
-	namespaceName := fmt.Sprintf("vmsingle-%s", strings.ToLower(random.UniqueId()))
+	namespaceName := fmt.Sprintf("vlogsingle-%s", strings.ToLower(random.UniqueId()))
 
 	kubectlOptions := k8s.NewKubectlOptions("", "", namespaceName)
 	k8s.CreateNamespace(t, kubectlOptions, namespaceName)
@@ -32,7 +30,7 @@ func TestVictoriaMetricsSingleInstallDefault(t *testing.T) {
 		KubectlOptions:    kubectlOptions,
 	}
 
-	releaseName := fmt.Sprintf("vmsingle-%s", strings.ToLower(random.UniqueId()))
+	releaseName := fmt.Sprintf("vlogsingle-%s", strings.ToLower(random.UniqueId()))
 	defer helm.Delete(t, options, releaseName, true)
 	helm.Install(t, options, helmChartPath, releaseName)
 
@@ -40,7 +38,7 @@ func TestVictoriaMetricsSingleInstallDefault(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify the StatefulSet was created and is ready using manual polling
-	statefulSetName := fmt.Sprintf("%s-victoria-metrics-single-server", releaseName)
+	statefulSetName := fmt.Sprintf("%s-victoria-logs-single-server", releaseName)
 	var statefulSet *appsv1.StatefulSet
 	err = wait.PollUntilContextTimeout(context.Background(), pollingInterval, pollingTimeout, true, func(ctx context.Context) (done bool, err error) {
 		statefulSet, err = k8sClient.AppsV1().StatefulSets(namespaceName).Get(ctx, statefulSetName, metav1.GetOptions{})
@@ -54,6 +52,6 @@ func TestVictoriaMetricsSingleInstallDefault(t *testing.T) {
 	require.NotNil(t, statefulSet)
 
 	// Verify the Service was created and is available
-	serviceName := fmt.Sprintf("%s-victoria-metrics-single-server", releaseName)
+	serviceName := fmt.Sprintf("%s-victoria-logs-single-server", releaseName)
 	k8s.WaitUntilServiceAvailable(t, kubectlOptions, serviceName, retries, pollingInterval)
 }
