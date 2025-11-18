@@ -5,6 +5,7 @@ on:
     paths:
       - Makefile
       - 'charts/**'
+      - 'test/**'
       - '!charts/*/lint/**'
       - '!**/*.md.gotmpl'
       - '!**/*.md'
@@ -15,6 +16,7 @@ on:
     paths:
       - Makefile
       - 'charts/**'
+      - 'test/**'
       - '!charts/*/lint/**'
       - '!**/*.md.gotmpl'
       - '!**/*.md'
@@ -128,3 +130,41 @@ jobs:
           else
             echo "skipping tests since to e2e values were found"
           fi
+
+  chart-tests:
+    name: Run chart tests
+    runs-on: ubuntu-24.04
+    permissions:
+      checks: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Restore binaries from cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ./bin
+          key: binary
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: "test/go.mod"
+          check-latest: true
+          cache: true
+        id: go
+      - name: Test in kind
+        if: github.event.pull_request.draft == false
+        run: |
+          GOBIN=$(pwd)/bin go install sigs.k8s.io/kind@latest
+          ./bin/kind create cluster
+          yq -M eval '.repositories[] | (.name + " " + .url)' .github/ci/helm-repos.yaml | xargs -L 1 helm repo add
+          cd test && go test ./...
+      - name: Publish Test Report
+        uses: mikepenz/action-junit-report@v5
+        if: success() || failure()
+        with:
+          report_paths: 'report.xml'
+      - name: Prepare binary cache
+        uses: actions/cache@v4
+        with:
+          path: ./bin
+          key: binary
