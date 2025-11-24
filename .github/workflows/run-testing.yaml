@@ -79,18 +79,18 @@ jobs:
       - name: Run tests
         run: |
           cd test
-          go test -json -p 1 ./... 2>&1 | golurectl -e -o /tmp/allure-results
+          go test -json -p 1 ./... 2>&1 | golurectl -s -e -o /tmp/allure-results
 
-      - name: DEBUG
+      - name: Generate Allure Report
         if: success() || failure()
         run: |
-          ls -la /tmp/allure-results
+          npx allure generate /tmp/allure-results -o /tmp/allure-report
 
       - name: Run Allure Action
         if: success() || failure()
         uses: allure-framework/allure-action@v0
         with:
-          report-directory: "/tmp/allure-results"
+          report-directory: "/tmp/allure-report"
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Prepare binary cache
