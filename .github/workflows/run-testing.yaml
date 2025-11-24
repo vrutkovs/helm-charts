@@ -78,7 +78,13 @@ jobs:
 
       - name: Run tests
         run: |
-          cd test && go test -json -p 1 ./... 2>&1 | golurectl -l -e -o /tmp/allure-results
+          cd test
+          go test -json -p 1 ./... 2>&1 | golurectl -e -o /tmp/allure-results
+
+      - name: DEBUG
+        if: success() || failure()
+        run: |
+          ls -la /tmp/allure-results
 
       - name: Run Allure Action
         if: success() || failure()
