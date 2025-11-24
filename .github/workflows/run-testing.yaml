@@ -81,6 +81,7 @@ jobs:
           cd test && go test -json -p 1 ./... 2>&1 | golurectl -l -e -o /tmp/allure-results
 
       - name: Run Allure Action
+        if: success() || failure()
         uses: allure-framework/allure-action@v0
         with:
           report-directory: "/tmp/allure-results"
