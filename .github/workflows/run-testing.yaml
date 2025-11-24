@@ -35,6 +35,7 @@ jobs:
       contents: read
       checks: write
       pull-requests: write
+      statuses: write
     if: github.event.pull_request.draft == false
     strategy:
       matrix:
@@ -84,14 +85,16 @@ jobs:
       - name: Generate Allure Report
         if: success() || failure()
         run: |
+          npm install allure
           npx allure generate /tmp/allure-results -o /tmp/allure-report
 
-      - name: Run Allure Action
+      - uses: actions/upload-artifact@v5
+        id: upload-artifact
         if: success() || failure()
-        uses: allure-framework/allure-action@v0
         with:
-          report-directory: "/tmp/allure-report"
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          name: report-${{ github.run_number }}-${{ matrix.k8s_version }}.html
+          path: /tmp/allure-report/index.html
+          retention-days: 7
 
       - name: Prepare binary cache
         uses: actions/cache@v4
