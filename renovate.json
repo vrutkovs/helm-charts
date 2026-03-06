@@ -64,10 +64,25 @@
       "allowedVersions": "/^v[0-9]+\\.[0-9]+\\.[0-9]+$/"
     },
     {
-      "description": "Bump patch Kubernetes versions, keeping each minor pinned",
+      "description": "Pin kindest/node 1.33 to patch updates only",
       "matchManagers": ["custom.regex"],
       "matchPackageNames": ["kindest/node"],
-      "matchUpdateTypes": ["patch"]
+      "matchCurrentVersion": "/^v1\\.33\\./",
+      "allowedVersions": "/^v1\\.33\\.[0-9]+$/"
+    },
+    {
+      "description": "Pin kindest/node 1.34 to patch updates only",
+      "matchManagers": ["custom.regex"],
+      "matchPackageNames": ["kindest/node"],
+      "matchCurrentVersion": "/^v1\\.34\\./",
+      "allowedVersions": "/^v1\\.34\\.[0-9]+$/"
+    },
+    {
+      "description": "Pin kindest/node 1.35 to patch updates only",
+      "matchManagers": ["custom.regex"],
+      "matchPackageNames": ["kindest/node"],
+      "matchCurrentVersion": "/^v1\\.35\\./",
+      "allowedVersions": "/^v1\\.35\\.[0-9]+$/"
     },
     {
       "description": "Group VictoriaMetrics appVersion updates",
